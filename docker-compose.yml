@@ -1,0 +1,30 @@
+version: "3.8"
+services:
+  java-jaeger:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: java-jaeger
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - OTEL_SERVICE_NAME=my-java-app # Nome do serviço para identificação no Jaeger-
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317 # Configura o endpoint para exportação
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+      #- OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318
+      #- OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+
+    ports:
+      - "8090:8080"
+    volumes:
+      - ./app:/app
+    depends_on:
+      - jaeger
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.46
+    container_name: jaeger
+    ports:
+      - "16686:16686" # Interface web do Jaeger
+      - "4317:4317"   # Endpoint OTLP para gRPC
+      - "4318:4318"   # Endpoint OTLP HTTP/Protobuf
+      - "6831:6831/udp" # Endpoint UDP para coleta de spans
