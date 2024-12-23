@@ -1,19 +1,19 @@
-FROM openjdk:17-jdk
+FROM openjdk:17-slim
 VOLUME /tmp
-COPY target/*.jar myapp.jar
 
-#ENTRYPOINT ["java", "-javaagent:/app/opentelemetry-javaagent.jar", "-jar", "/myapp.jar"]
+# Atualiza o sistema e instala o Maven
+RUN apt-get update && apt-get install -y maven
 
-#
-# FROM openjdk:17-jdk
-#
-# VOLUME /tmp
-#
-# #WORKDIR /app
-#
-# COPY target/*.jar /app/myapp.jar
-#
-# #ENTRYPOINT ["java", "-javaagent:/app/opentelemetry-javaagent.jar", "-jar", "/app/myapp.jar"]
+# Copia o arquivo pom.xml e faz o download das dependências com Maven
+COPY pom.xml .
+RUN mvn dependency:go-offline
 
-CMD ["java", "-javaagent:/app/opentelemetry-javaagent.jar", "-jar", "/myapp.jar"]
+# Copia o restante do projeto e executa o build com Maven
+COPY . .
+RUN mvn clean install -DskipTests
+
+# Expõe a porta em que a aplicação estará rodando
+EXPOSE 8080
+
+CMD ["java", "-javaagent:/app/opentelemetry-javaagent.jar", "-jar", "target/SpringBootCRUDWithSplunkIntegration-0.0.1-SNAPSHOT.jar"]
 
